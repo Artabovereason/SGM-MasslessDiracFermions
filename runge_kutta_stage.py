@@ -30,7 +30,7 @@ def force(position,tip_position):
 def force(position,tip_position):
     return [intensity_parameter*A_parameter*2*(position[0]-tip_position[0])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2),
             intensity_parameter*A_parameter*2*(position[1]-tip_position[1])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2)]
-
+            
 
 class electron:
     def __init__(self,starting_position,starting_velocity,number_of_iterations,sign,geometry,tip_position):
