@@ -12,7 +12,7 @@ length_parameter       = 2.5               #micrometer
 width_parameter        = length_parameter  #micrometer
 A_parameter            = 1#fermi_energy_parameter*length_parameter*width_parameter
 tip_size_parameter     = 1               #micrometer  2*10**(-2)
-tip_position           = [0,0]
+tip_position           = [0,1]
 
 def potential(position,tip_position):
     return intensity_parameter*A_parameter/((tip_size_parameter**2)+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)
@@ -30,7 +30,7 @@ def force(position,tip_position):
 def force(position,tip_position):
     return [intensity_parameter*A_parameter*2*(position[0]-tip_position[0])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2),
             intensity_parameter*A_parameter*2*(position[1]-tip_position[1])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2)]
-            
+
 
 class electron:
     def __init__(self,starting_position,starting_velocity,number_of_iterations,sign,geometry,tip_position):
@@ -119,12 +119,11 @@ class electron:
                 else:
                     pass
 
-                '''
-                In order to compute the classical transmission, we need to enclose our system in a box,
-                here the box is delimited inbetween x from [-6 to +10] and y from [-10 to +10].
-                In order to make the specular reflection (mirror-like) we just have to flip the sign of the impulsion p at the interface.
-                '''
                 if self.geometry == 'cubic':
+                    '''
+                    In order to compute the classical transmission, we need to enclose our system in a box.
+                    In order to make the specular reflection (mirror-like) we just have to flip the sign of the impulsion p at the interface.
+                    '''
                     if np.abs(self.list_of_r[N][1]) > y_top_limit:                                           #Reflection on top and bottom of the box
                         self.list_of_p[N][1] = -self.list_of_p[N][1]
                     elif np.abs(self.list_of_r[N][1]) > captation_sz and self.list_of_r[N][0] > x_rgt_limit: #Reflection on the right of the box and outside of the drain captation
@@ -145,19 +144,15 @@ class electron:
                         break
 
                 elif self.geometry == 'spheric':
+                    '''
+                    In order to compute the classical transmission, we need to enclose our system in a box.
+                    In order to make the specular reflection (mirror-like) we just have to use Snell's law of reflection.
+                    '''
                     if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 ) >= y_top_limit and N !=0 :
-                        #theta                = np.arctan((self.list_of_r[N][1]-self.tip_position[1])/(self.list_of_r[N][0]-self.tip_position[0]))
-                        #new_theta            = (2/y_top_limit)*self.list_of_r[N][1]+theta
-                        '''
-                        phi   = np.arctan( self.list_of_p[N][1]/self.list_of_p[N][0] )
-                        theta = phi+np.pi/2
-                        new_theta = theta
-                        '''
-                        n_x =  self.list_of_r[N][0]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
-                        n_y =  self.list_of_r[N][1]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
-
-                        self.list_of_p[N][0] = self.list_of_p[N][0]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y )*n_x
-                        self.list_of_p[N][1] = self.list_of_p[N][1]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y )*n_y
+                        n_x                  = self.list_of_r[N][0]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
+                        n_y                  = self.list_of_r[N][1]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
+                        self.list_of_p[N][0] = self.list_of_p[N][0]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y)*n_x
+                        self.list_of_p[N][1] = self.list_of_p[N][1]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y)*n_y
                     else:
                         pass
 
@@ -168,16 +163,13 @@ class electron:
                     else:
                         pass
 
-                    if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 )  > 1.1*y_top_limit:
+                    if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 )  > 1.1*y_top_limit: #limit very long time occuring
                         break
 
-                    if self.drain == 1 or self.source ==1 : #This is so when the electron is either in the drain or the source, it stop the computation
+                    if self.drain == 1 or self.source ==1 : #This is so when the electron is either in the drain or the source, it stop the computation thus reducing the time of the computation
                         break
-
                 else:
                     print('Not implemented yet')
-
-
         else :
             print('Not implemented yet')
 
@@ -193,11 +185,11 @@ if __name__ == '__main__':
     number_drain        = 0
     number_source       = 0
     sum_transmission    = 0
-    number_electrons    = 5000                     #Number of electrons in the simulation
+    number_electrons    = 10                     #Number of electrons in the simulation
     number_span         = 1
-    start_angle         = -np.pi/2#+np.pi/(number_electrons**2)               #First angle of diffusion
-    end_angle           = +np.pi/2#-np.pi/(number_electrons**2)                   #Last angle of diffusion
-    geometry            = 'spheric'#'cubic'
+    start_angle         = -np.pi/2               #First angle of diffusion
+    end_angle           = +np.pi/2               #Last angle of diffusion
+    geometry            = 'spheric'              #it is either 'cubic' or 'spheric' at the moment, planning to do ellpisoid and rectangular as generalization of the two first mentionned here
     tip_position        = tip_position
     v0          = 1#10**6
     for w in np.linspace(y_bot_span,y_top_span,number_span):
@@ -210,23 +202,27 @@ if __name__ == '__main__':
             electron1.numerical_scheme('RK4')
             if electron1.drain == 1:
                 number_drain       += 1
-                sum_transmission_i += np.cos(j) * (end_angle-start_angle)/number_electrons
+                sum_transmission_i += np.cos(j) * (end_angle-start_angle)/number_electrons #integral into sums
                 plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='red'  ,alpha=0.1)
             elif electron1.source == 1:
                 number_source      += 1
-                sum_transmission_i += 0
+                sum_transmission_i += 0                                                    #integral into sums
                 plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='green',alpha=0.1)
             else:
                 plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='blue' ,alpha=0.1)
-        sum_transmission += sum_transmission_i*(y_top_span-y_bot_span)/number_span
+        sum_transmission += sum_transmission_i*(y_top_span-y_bot_span)/number_span         #integral into sums
 
-    print(' ')
-    print(' ')
-    #print('In the end, there is about '+str(100*number_drain/(number_drain+number_source))+'% of electrons back in the drain')
-    print('The transmission is about '+str(sum_transmission))
-    print(' ')
+    if number_drain+number_source != 0 :
+        print(' ')
+        print(' ')
+        print('In the end, there is about '+str(100*number_drain/(number_drain+number_source))+'% of electrons back in the drain')
+        print('The transmission is about '+str(sum_transmission))
+    else:
+        pass
+
     stop_time = timeit.default_timer()
-    print('Time: ', stop_time - start_time)
+    print(' ')
+    print('time of simulation (in s): ', stop_time - start_time)
     print(' ')
     space_x = np.linspace(x_lft_limit,x_rgt_limit,100)
     space_y = np.linspace(y_bot_limit,y_top_limit,100)
@@ -248,14 +244,14 @@ if __name__ == '__main__':
         plt.plot(+a_captation,b_captation,color='red'  ,alpha=1, linewidth=2)
         plt.plot(-a_captation,b_captation,color='green',alpha=1, linewidth=2)
     if geometry == 'cubic' :
-        plt.plot([x_lft_limit,x_rgt_limit],[y_bot_limit,y_bot_limit],color='yellow',alpha=1)
-        plt.plot([x_lft_limit,x_rgt_limit],[y_top_limit,y_top_limit],color='yellow',alpha=1)
-        plt.plot([x_lft_limit,x_lft_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1)
-        plt.plot([x_rgt_limit,x_rgt_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1)
-        plt.fill_between([x_rgt_limit-0.2,x_rgt_limit], [+captation_sz,+captation_sz], color='red'                 )
-        plt.fill_between([x_rgt_limit-0.2,x_rgt_limit], [-captation_sz,-captation_sz], color='red'  ,label='Drain' )
-        plt.fill_between([x_lft_limit,x_lft_limit+0.2], [+captation_sz,+captation_sz], color='green',label='Source')
-        plt.fill_between([x_lft_limit,x_lft_limit+0.2], [-captation_sz,-captation_sz], color='green'               )
+        plt.plot([x_lft_limit,x_rgt_limit],[y_bot_limit,y_bot_limit],color='yellow',alpha=1,linewidth=2)
+        plt.plot([x_lft_limit,x_rgt_limit],[y_top_limit,y_top_limit],color='yellow',alpha=1,linewidth=2)
+        plt.plot([x_lft_limit,x_lft_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1,linewidth=2)
+        plt.plot([x_rgt_limit,x_rgt_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1,linewidth=2)
+        plt.fill_between([x_rgt_limit+0.2,x_rgt_limit], [+captation_sz,+captation_sz], color='red'                 )
+        plt.fill_between([x_rgt_limit+0.2,x_rgt_limit], [-captation_sz,-captation_sz], color='red'  ,label='Drain' )
+        plt.fill_between([x_lft_limit,x_lft_limit-0.2], [+captation_sz,+captation_sz], color='green',label='Source')
+        plt.fill_between([x_lft_limit,x_lft_limit-0.2], [-captation_sz,-captation_sz], color='green'               )
     plt.xlim([x_lft_limit-1, x_rgt_limit+1])
     plt.ylim([y_bot_limit-1, y_top_limit+1])
     plt.xlabel(r'$x[\mu m]$')
