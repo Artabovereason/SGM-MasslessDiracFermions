@@ -1,7 +1,10 @@
 import numpy             as np
 import matplotlib.pyplot as plt
+import timeit
 from matplotlib   import cm
 from mpl_toolkits import mplot3d
+
+start_time = timeit.default_timer()
 
 intensity_parameter    = 1             #Intensity of the potential : u_t
 fermi_energy_parameter = 1000                #meV
@@ -143,10 +146,18 @@ class electron:
 
                 elif self.geometry == 'spheric':
                     if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 ) >= y_top_limit and N !=0 :
-                        theta                = np.arctan((self.list_of_r[N][1]-self.tip_position[1])/(self.list_of_r[N][0]-self.tip_position[0]))
-                        new_theta            = (2/y_top_limit)*self.list_of_r[N][1]+theta
-                        self.list_of_p[N][0] = np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2)*np.cos(new_theta)
-                        self.list_of_p[N][1] = np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2)*np.sin(new_theta)
+                        #theta                = np.arctan((self.list_of_r[N][1]-self.tip_position[1])/(self.list_of_r[N][0]-self.tip_position[0]))
+                        #new_theta            = (2/y_top_limit)*self.list_of_r[N][1]+theta
+                        '''
+                        phi   = np.arctan( self.list_of_p[N][1]/self.list_of_p[N][0] )
+                        theta = phi+np.pi/2
+                        new_theta = theta
+                        '''
+                        n_x =  self.list_of_r[N][0]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
+                        n_y =  self.list_of_r[N][1]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
+
+                        self.list_of_p[N][0] = self.list_of_p[N][0]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y )*n_x
+                        self.list_of_p[N][1] = self.list_of_p[N][1]-2*(self.list_of_p[N][0]*n_x +self.list_of_p[N][1]*n_y )*n_y
                     else:
                         pass
 
@@ -156,25 +167,12 @@ class electron:
                         self.source = 1
                     else:
                         pass
-                    '''
-                    if   np.abs(self.list_of_r[N][1]) < captation_sz and np.sqrt( (self.list_of_r[N][0]-tip_center[0])**2+(self.list_of_r[N][1]-tip_center[1])**2 ) > y_top_limit and self.list_of_r[N][0]>0: #Drain captation
 
-                        self.drain = 1
-                    elif np.abs(self.list_of_r[N][1]) < captation_sz and np.sqrt( (self.list_of_r[N][0]-tip_center[0])**2+(self.list_of_r[N][1]-tip_center[1])**2 ) > y_top_limit and self.list_of_r[N][1]<0: #Source captation
-                        self.source = 1
-                    else :
-                        pass
-                    '''
-                    if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 )  > y_top_limit+2:
+                    if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 )  > 1.1*y_top_limit:
                         break
 
                     if self.drain == 1 or self.source ==1 : #This is so when the electron is either in the drain or the source, it stop the computation
                         break
-
-
-
-
-
 
                 else:
                     print('Not implemented yet')
@@ -184,7 +182,7 @@ class electron:
             print('Not implemented yet')
 
 if __name__ == '__main__':
-    x_lft_limit         = -length_parameter       #Left limit of the box (x axis)
+    x_lft_limit         = -length_parameter      #Left limit of the box (x axis)
     x_rgt_limit         = +length_parameter      #Right limit of the box (x axis)
     y_top_limit         = +length_parameter      #Top limit of the box (y axis)
     y_bot_limit         = -length_parameter      #Bottom limit of the box (y axis)
@@ -195,11 +193,11 @@ if __name__ == '__main__':
     number_drain        = 0
     number_source       = 0
     sum_transmission    = 0
-    number_electrons    = 10                     #Number of electrons in the simulation
+    number_electrons    = 5000                     #Number of electrons in the simulation
     number_span         = 1
-    start_angle         = -np.pi/15#+np.pi/(number_electrons**2)               #First angle of diffusion
-    end_angle           = +np.pi/15#-np.pi/(number_electrons**2)                   #Last angle of diffusion
-    geometry            = 'cubic'
+    start_angle         = -np.pi/2#+np.pi/(number_electrons**2)               #First angle of diffusion
+    end_angle           = +np.pi/2#-np.pi/(number_electrons**2)                   #Last angle of diffusion
+    geometry            = 'spheric'#'cubic'
     tip_position        = tip_position
     v0          = 1#10**6
     for w in np.linspace(y_bot_span,y_top_span,number_span):
@@ -227,25 +225,33 @@ if __name__ == '__main__':
     #print('In the end, there is about '+str(100*number_drain/(number_drain+number_source))+'% of electrons back in the drain')
     print('The transmission is about '+str(sum_transmission))
     print(' ')
-
+    stop_time = timeit.default_timer()
+    print('Time: ', stop_time - start_time)
+    print(' ')
     space_x = np.linspace(x_lft_limit,x_rgt_limit,100)
     space_y = np.linspace(y_bot_limit,y_top_limit,100)
     space_z = np.zeros((len(space_x),len(space_y)))
     for i in range(len(space_x)):
         for j in range(len(space_y)):
             space_z[j][i] = potential([space_y[i],space_x[j]],tip_position)
-    plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10)
+    plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
     plt.colorbar()
     if geometry == 'spheric' :
         angle = np.linspace(0, 2*np.pi, 100)
         a     = y_top_limit*np.cos(angle)
         b     = y_top_limit*np.sin(angle)
-        plt.plot(a,b,color='yellow',alpha=0.5)
+
+        angle_captation = np.linspace(-np.arcsin(captation_sz/y_top_limit),+np.arcsin(captation_sz/y_top_limit),20)
+        a_captation     = y_top_limit*np.cos(angle_captation)
+        b_captation     = y_top_limit*np.sin(angle_captation)
+        plt.plot(a           ,b,color='yellow'         ,alpha=1, linewidth=2)
+        plt.plot(+a_captation,b_captation,color='red'  ,alpha=1, linewidth=2)
+        plt.plot(-a_captation,b_captation,color='green',alpha=1, linewidth=2)
     if geometry == 'cubic' :
-        plt.plot([x_lft_limit,x_rgt_limit],[y_bot_limit,y_bot_limit],color='yellow',alpha=0.5)
-        plt.plot([x_lft_limit,x_rgt_limit],[y_top_limit,y_top_limit],color='yellow',alpha=0.5)
-        plt.plot([x_lft_limit,x_lft_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=0.5)
-        plt.plot([x_rgt_limit,x_rgt_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=0.5)
+        plt.plot([x_lft_limit,x_rgt_limit],[y_bot_limit,y_bot_limit],color='yellow',alpha=1)
+        plt.plot([x_lft_limit,x_rgt_limit],[y_top_limit,y_top_limit],color='yellow',alpha=1)
+        plt.plot([x_lft_limit,x_lft_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1)
+        plt.plot([x_rgt_limit,x_rgt_limit],[y_bot_limit,y_top_limit],color='yellow',alpha=1)
         plt.fill_between([x_rgt_limit-0.2,x_rgt_limit], [+captation_sz,+captation_sz], color='red'                 )
         plt.fill_between([x_rgt_limit-0.2,x_rgt_limit], [-captation_sz,-captation_sz], color='red'  ,label='Drain' )
         plt.fill_between([x_lft_limit,x_lft_limit+0.2], [+captation_sz,+captation_sz], color='green',label='Source')
