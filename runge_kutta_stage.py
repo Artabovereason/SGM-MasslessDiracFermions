@@ -12,7 +12,7 @@ length_parameter       = 2.5               #micrometer
 width_parameter        = length_parameter  #micrometer
 A_parameter            = 1#fermi_energy_parameter*length_parameter*width_parameter
 tip_size_parameter     = 1               #micrometer  2*10**(-2)
-tip_position           = [0,0]
+tip_position           = [1,1]
 
 def potential(position,tip_position):
     return intensity_parameter*A_parameter/((tip_size_parameter**2)+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)
@@ -146,13 +146,6 @@ class electron:
 
                 elif self.geometry == 'spheric':
                     if np.sqrt( ((self.list_of_r[N][0]-self.tip_position[0])**2)+(self.list_of_r[N][1]-self.tip_position[1])**2 ) >= y_top_limit and N !=0 :
-                        #theta                = np.arctan((self.list_of_r[N][1]-self.tip_position[1])/(self.list_of_r[N][0]-self.tip_position[0]))
-                        #new_theta            = (2/y_top_limit)*self.list_of_r[N][1]+theta
-                        '''
-                        phi   = np.arctan( self.list_of_p[N][1]/self.list_of_p[N][0] )
-                        theta = phi+np.pi/2
-                        new_theta = theta
-                        '''
                         n_x =  self.list_of_r[N][0]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
                         n_y =  self.list_of_r[N][1]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
 
@@ -193,7 +186,7 @@ if __name__ == '__main__':
     number_drain        = 0
     number_source       = 0
     sum_transmission    = 0
-    number_electrons    = 5000                     #Number of electrons in the simulation
+    number_electrons    = 100                     #Number of electrons in the simulation
     number_span         = 1
     start_angle         = -np.pi/2#+np.pi/(number_electrons**2)               #First angle of diffusion
     end_angle           = +np.pi/2#-np.pi/(number_electrons**2)                   #Last angle of diffusion
