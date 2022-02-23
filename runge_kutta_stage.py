@@ -6,6 +6,12 @@ from mpl_toolkits import mplot3d
 
 start_time = timeit.default_timer()
 
+'''
+physics : 'lorentzian'
+          'np-junction-sharp'
+          'np-junction-smooth''
+          'null'
+'''
 class physical_system:
     def __init__(self,form,tip_position,intensity_parameter,A_parameter,tip_size_parameter):
         self.form                = form
@@ -19,14 +25,20 @@ class physical_system:
         if self.form == 'lorentzian':
             return self.intensity_parameter*self.A_parameter/((self.tip_size_parameter**2)+(position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)
 
-        elif self.form == 'np-junction':
+        elif self.form == 'np-junction-sharp':
             if position[0]<0:
                 return 0
             if position[0]>0 and position[0]<0.01:
                 return 100*position[0]
             else:
                 return 1
-            #return 10*(np.arctan(10*position[0])+np.pi/2)
+        elif self.form == 'np-junction-smooth':
+            if position[0]<0:
+                return 0
+            if position[0]>0 and position[0]<1:
+                return position[0]
+            else:
+                return 1
         elif self.form == 'null':
             return 0
         else:
@@ -36,11 +48,18 @@ class physical_system:
         if self.form == 'lorentzian':
             return [self.intensity_parameter*self.A_parameter*2*(position[0]-self.tip_position[0])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2),
                     self.intensity_parameter*self.A_parameter*2*(position[1]-self.tip_position[1])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2)]
-        elif self.form == 'np-junction':
+        elif self.form == 'np-junction-sharp':
             if position[0]<0:
                 return [0,0]
             if position[0]>0 and position[0]<0.01:
                 return [-100,0]
+            else:
+                return [0,0]
+        elif self.form == 'np-junction-smooth':
+            if position[0]<0:
+                return [0,0]
+            if position[0]>0 and position[0]<1:
+                return [-1,0]
             else:
                 return [0,0]
         elif self.form == 'null':
@@ -332,7 +351,6 @@ class class_geometry:
             b     = self.center[1]+self.y_radius*np.sin(angle)
             plt.plot(a           ,b,color='yellow'         ,alpha=1, linewidth=2)
 
-
 if __name__ == '__main__':
     plot_mod = 'off'
     intensity_parameter    = 0.6                #Intensity of the potential : u_t
@@ -350,7 +368,7 @@ if __name__ == '__main__':
               'null'
     '''
     physics                = physical_system('lorentzian',tip_position,intensity_parameter,A_parameter,tip_size_parameter) #form,tip_position,intensity_parameter,A_parameter,tip_size_parameter
-    
+
     '''
     geometry : 'cubic'
                'spheric'
@@ -364,6 +382,7 @@ if __name__ == '__main__':
     number_source          = 0
     sum_transmission       = 0
     number_electrons       = 100                     #Number of electrons in the simulation
+    number_time_iterations = 50000
     number_span            = 1
     start_angle            = -np.pi/20               #First angle of diffusion
     end_angle              = +np.pi/20               #Last angle of diffusion
@@ -373,25 +392,24 @@ if __name__ == '__main__':
 
     for w in np.linspace(w_span_left,w_span_right,number_span):
         w=0
-        sum_transmission_i = 0                                                               #intermediate scalar to sum after each theta_j and then sum_transmission is the sum for all y_w values
+        sum_transmission_i = 0                                   #intermediate scalar to sum after each theta_j and then sum_transmission is the sum for all y_w values
         for j in np.linspace(start_angle,end_angle,number_electrons):
             start_countdown +=1
             print(' '+str(100*start_countdown/(number_electrons*number_span))+'%', end="\r") #the end="\r" allows to only print one % and delete afterwards
-            if   geometry_structure.geometry == 'cubic':
+            if   geometry_structure.geometry == 'cubic'   :
                 start_x_electron = geometry_structure.left
                 start_y_electron = w
-            elif geometry_structure.geometry == 'spheric':
+            elif geometry_structure.geometry == 'spheric' :
                 angle_thing      =  np.arctan(w/geometry_structure.radius)
                 start_x_electron = -geometry_structure.radius*np.cos(angle_thing)+geometry_structure.center[0]
                 start_y_electron = -geometry_structure.radius*np.sin(angle_thing)+geometry_structure.center[1]
             elif geometry_structure.geometry == 'elliptic':
                 start_x_electron = -geometry_structure.x_radius
                 start_y_electron = w
-                #pass
 
-            electron1 = electron([start_x_electron,start_y_electron],[v0*np.cos(j),v0*np.sin(j)],50000,+1,geometry_structure,tip_position)
+            electron1 = electron([start_x_electron,start_y_electron],[v0*np.cos(j),v0*np.sin(j)],number_time_iterations,v0,geometry_structure,tip_position)
             electron1.numerical_scheme('RK4')
-            if electron1.drain == 1:
+            if   electron1.drain  == 1:
                 number_drain       += 1
                 sum_transmission_i += np.cos(j) * (end_angle-start_angle)/number_electrons #integral into sums
                 if plot_mod == 'on':
