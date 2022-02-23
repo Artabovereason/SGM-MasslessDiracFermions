@@ -6,55 +6,31 @@ from mpl_toolkits import mplot3d
 
 start_time = timeit.default_timer()
 
-intensity_parameter    = 1             #Intensity of the potential : u_t
-fermi_energy_parameter = 100                #meV
-length_parameter       = 2.5               #micrometer
-width_parameter        = length_parameter  #micrometer
-A_parameter            = 1#fermi_energy_parameter*length_parameter*width_parameter
-tip_size_parameter     = 1               #micrometer  2*10**(-2)
-tip_position           = [0,0]
-
-def potential(position,tip_position):
-    return intensity_parameter*A_parameter/((tip_size_parameter**2)+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)
-'''
-
-def potential(position,tip_position):
-    return intensity_parameter/(1+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)
-
-
-def force(position,tip_position):
-    return [intensity_parameter*2*(position[0]-tip_position[0])/((1+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2),
-            intensity_parameter*2*(position[1]-tip_position[1])/((1+(position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2)]
-
-'''
-def force(position,tip_position):
-    return [intensity_parameter*A_parameter*2*(position[0]-tip_position[0])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2),
-            intensity_parameter*A_parameter*2*(position[1]-tip_position[1])/((tip_size_parameter**2+(((position[0]-tip_position[0])**2+(position[1]-tip_position[1])**2)**2))**2)]
-
 class physical_system:
-    def __init__(self,form,tip_position):
-        self.form         = form
-        self.tip_position = tip_position
+    def __init__(self,form,tip_position,intensity_parameter,A_parameter,tip_size_parameter):
+        self.form                = form
+        self.tip_position        = tip_position
+        self.intensity_parameter = intensity_parameter
+        self.A_parameter         = A_parameter
+        self.tip_size_parameter  = tip_size_parameter
 
-    def potential(self,position):
+    def potential(self,position,tip_position):
         if self.form == 'lorentzian':
-            return intensity_parameter*A_parameter/((tip_size_parameter**2)+(position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)
+            return self.intensity_parameter*self.A_parameter/((self.tip_size_parameter**2)+(position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)
 
         elif self.form == 'np-junction':
             pass
         else:
             print('Not implemented yet 3')
 
-    def force(self,position):
+    def force(self,position,tip_position):
         if self.form == 'lorentzian':
-            return [intensity_parameter*A_parameter*2*(position[0]-self.tip_position[0])/((tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2),
-                    intensity_parameter*A_parameter*2*(position[1]-self.tip_position[1])/((tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2)]
+            return [self.intensity_parameter*self.A_parameter*2*(position[0]-self.tip_position[0])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2),
+                    self.intensity_parameter*self.A_parameter*2*(position[1]-self.tip_position[1])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2)]
         elif self.form == 'np-junction':
             pass
         else:
             print('Not implemented yet 4')
-
-
 
 class electron:
     def __init__(self,starting_position,starting_velocity,number_of_iterations,sign,geometry,tip_position):
@@ -85,8 +61,8 @@ class electron:
                     self.list_of_p.append(self.starting_velocity)
                     self.list_of_r.append(self.starting_position)
                 else:
-                    self.list_of_p.append([self.list_of_p[N-1][0]+self.step_time*(force(self.list_of_r[N-1],self.tip_position)[0]),
-                                           self.list_of_p[N-1][1]+self.step_time*(force(self.list_of_r[N-1],self.tip_position)[1])])
+                    self.list_of_p.append([self.list_of_p[N-1][0]+self.step_time*(physics.force(self.list_of_r[N-1],self.tip_position)[0]),
+                                           self.list_of_p[N-1][1]+self.step_time*(physics.force(self.list_of_r[N-1],self.tip_position)[1])])
                     self.list_of_r.append([self.list_of_r[N-1][0]+self.step_time*self.list_of_p[N-1][0]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2),
                                            self.list_of_r[N-1][1]+self.step_time*self.list_of_p[N-1][1]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2) ])
 
@@ -109,20 +85,20 @@ class electron:
                     self.list_of_p.append(self.starting_velocity)
                     self.list_of_r.append(self.starting_position)
                 else:
-                    kn1.append([force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[0],
-                                force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[1]])
+                    kn1.append([physics.force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[0],
+                                physics.force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[1]])
                     ln1.append([v0*self.list_of_p[N-1][0]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2),
                                 v0*self.list_of_p[N-1][1]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2)])
-                    kn2.append([force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[0],
-                                force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[1]])
+                    kn2.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[0],
+                                physics.force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[1]])
                     ln2.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2)),
                                 v0*(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2))])
-                    kn3.append([force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[0],
-                                force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[1]])
+                    kn3.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[0],
+                                physics.force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[1]])
                     ln3.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2)),
                                 v0*(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2))])
-                    kn4.append([force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[0],
-                                force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[1]])
+                    kn4.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[0],
+                                physics.force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[1]])
                     ln4.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn3[0][0])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2)),
                                 v0*(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2))])
                     self.list_of_p.append([self.list_of_p[N-1][0]+          (self.step_time/6.0)*(kn1[0][0]+2*kn2[0][0]+2*kn3[0][0]+kn4[0][0]),
@@ -133,11 +109,11 @@ class electron:
                 '''
                 This is where the "flip" of the band will happen, and thus, we will change the self.sign from +1 to -1 and then -1 to +1.
                 '''
-                if   potential(self.list_of_r[N],self.tip_position) > v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==+1 and flip <1:
+                if   physics.potential(self.list_of_r[N],self.tip_position) > v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==+1 and flip <1:
                     flip +=1
                     self.sign = -1
 
-                elif potential(self.list_of_r[N],self.tip_position) < v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==-1 and flip <2:
+                elif physics.potential(self.list_of_r[N],self.tip_position) < v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==-1 and flip <2:
                     flip +=1
                     self.sign = +1
                 else:
@@ -241,7 +217,6 @@ class electron:
         else :
             print('Not implemented yet 2')
 
-
 class class_geometry:
     def __init__(self,geometry,left,right,top,bottom,captation_size,span):
         self.geometry = geometry
@@ -278,7 +253,7 @@ class class_geometry:
             space_z = np.zeros((len(space_x),len(space_y)))
             for i in range(len(space_x)):
                 for j in range(len(space_y)):
-                    space_z[j][i] = potential([space_y[i],space_x[j]],tip_position)
+                    space_z[j][i] = physics.potential([space_y[i],space_x[j]],tip_position)
             plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
             plt.colorbar()
             plt.plot([self.left ,self.right],[self.bot,self.bot],color='yellow',alpha=1,linewidth=2)
@@ -327,9 +302,16 @@ class class_geometry:
             b     = self.center[1]+self.y_radius*np.sin(angle)
             plt.plot(a           ,b,color='yellow'         ,alpha=1, linewidth=2)
 
-
-
 if __name__ == '__main__':
+    intensity_parameter    = 1             #Intensity of the potential : u_t
+    fermi_energy_parameter = 100                #meV
+    length_parameter       = 2.5               #micrometer
+    width_parameter        = length_parameter  #micrometer
+    A_parameter            = 1                 #fermi_energy_parameter*length_parameter*width_parameter
+    tip_size_parameter     = 1                 #micrometer  2*10**(-2)
+    tip_position           = [0,0]
+
+    physics             = physical_system('lorentzian',tip_position,intensity_parameter,A_parameter,tip_size_parameter) #form,tip_position,intensity_parameter,A_parameter,tip_size_parameter
     geometry_structure  = class_geometry('cubic',-length_parameter,+length_parameter,+length_parameter,-length_parameter,length_parameter/5.0,length_parameter/5.0) # geometry,left,right,top,bottom,captation_size
     start_countdown     = 0                      #Show % of completion on the terminal
     number_drain        = 0
