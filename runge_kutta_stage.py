@@ -14,12 +14,21 @@ class physical_system:
         self.A_parameter         = A_parameter
         self.tip_size_parameter  = tip_size_parameter
 
+
     def potential(self,position,tip_position):
         if self.form == 'lorentzian':
             return self.intensity_parameter*self.A_parameter/((self.tip_size_parameter**2)+(position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)
 
         elif self.form == 'np-junction':
-            pass
+            if position[0]<0:
+                return 0
+            if position[0]>0 and position[0]<0.01:
+                return 100*position[0]
+            else:
+                return 1
+            #return 10*(np.arctan(10*position[0])+np.pi/2)
+        elif self.form == 'null':
+            return 0
         else:
             print('Not implemented yet 3')
 
@@ -28,7 +37,14 @@ class physical_system:
             return [self.intensity_parameter*self.A_parameter*2*(position[0]-self.tip_position[0])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2),
                     self.intensity_parameter*self.A_parameter*2*(position[1]-self.tip_position[1])/((self.tip_size_parameter**2+(((position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)**2))**2)]
         elif self.form == 'np-junction':
-            pass
+            if position[0]<0:
+                return [0,0]
+            if position[0]>0 and position[0]<0.01:
+                return [-100,0]
+            else:
+                return [0,0]
+        elif self.form == 'null':
+            return [0,0]
         else:
             print('Not implemented yet 4')
 
@@ -39,7 +55,8 @@ class electron:
         self.number_of_iterations = number_of_iterations
         self.list_of_p            = []
         self.list_of_r            = []
-        self.sign                 = sign
+        self.v0 = sign
+        #self.sign                 = sign
         self.geometry             = geometry
         self.tip_position         = tip_position
 
@@ -87,35 +104,38 @@ class electron:
                 else:
                     kn1.append([physics.force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[0],
                                 physics.force([self.list_of_r[N-1][0],self.list_of_r[N-1][1]],self.tip_position)[1]])
-                    ln1.append([v0*self.list_of_p[N-1][0]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2),
-                                v0*self.list_of_p[N-1][1]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2)])
+                    ln1.append([self.v0*self.list_of_p[N-1][0]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2),
+                                self.v0*self.list_of_p[N-1][1]/np.sqrt(self.list_of_p[N-1][0]**2+self.list_of_p[N-1][1]**2)])
                     kn2.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[0],
                                 physics.force([self.list_of_r[N-1][0]+self.step_time*ln1[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln1[0][1]/2.0],self.tip_position)[1]])
-                    ln2.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2)),
-                                v0*(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2))])
+                    ln2.append([self.v0*(self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2)),
+                                self.v0*(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn1[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn1[0][1]/2.0)**2))])
                     kn3.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[0],
                                 physics.force([self.list_of_r[N-1][0]+self.step_time*ln2[0][0]/2.0, self.list_of_r[N-1][1]+self.step_time*ln2[0][1]/2.0],self.tip_position)[1]])
-                    ln3.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2)),
-                                v0*(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2))])
+                    ln3.append([self.v0*(self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2)),
+                                self.v0*(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn2[0][0]/2.0)**2+(self.list_of_p[N-1][1]+self.step_time*kn2[0][1]/2.0)**2))])
                     kn4.append([physics.force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[0],
                                 physics.force([self.list_of_r[N-1][0]+self.step_time*ln3[0][0],self.list_of_r[N-1][1]+self.step_time*ln3[0][1]],self.tip_position)[1]])
-                    ln4.append([v0*(self.list_of_p[N-1][0]+self.step_time*kn3[0][0])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2)),
-                                v0*(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2))])
-                    self.list_of_p.append([self.list_of_p[N-1][0]+          (self.step_time/6.0)*(kn1[0][0]+2*kn2[0][0]+2*kn3[0][0]+kn4[0][0]),
-                                           self.list_of_p[N-1][1]+self.sign*(self.step_time/6.0)*(kn1[0][1]+2*kn2[0][1]+2*kn3[0][1]+kn4[0][1])])
+                    ln4.append([self.v0*(self.list_of_p[N-1][0]+self.step_time*kn3[0][0])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2)),
+                                self.v0*(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])/(np.sqrt((self.list_of_p[N-1][0]+self.step_time*kn3[0][0])**2+(self.list_of_p[N-1][1]+self.step_time*kn3[0][1])**2))])
+                    self.list_of_p.append([self.list_of_p[N-1][0]+(self.step_time/6.0)*(kn1[0][0]+2*kn2[0][0]+2*kn3[0][0]+kn4[0][0]),
+                                           self.list_of_p[N-1][1]+(self.step_time/6.0)*(kn1[0][1]+2*kn2[0][1]+2*kn3[0][1]+kn4[0][1])])
 
                     self.list_of_r.append([self.list_of_r[N-1][0]+(self.step_time/6.0)*(ln1[0][0]+2*ln2[0][0]+2*ln3[0][0]+ln4[0][0]),
                                            self.list_of_r[N-1][1]+(self.step_time/6.0)*(ln1[0][1]+2*ln2[0][1]+2*ln3[0][1]+ln4[0][1])])
                 '''
                 This is where the "flip" of the band will happen, and thus, we will change the self.sign from +1 to -1 and then -1 to +1.
                 '''
-                if   physics.potential(self.list_of_r[N],self.tip_position) > v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==+1 and flip <1:
+                if   physics.potential(self.list_of_r[N],self.tip_position) > self.v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.v0 ==+1 and flip <1:
                     flip +=1
-                    self.sign = -1
+                    self.list_of_p[N][0]=-self.list_of_p[N][0]
+                    self.v0 = -self.v0
+                    #self.sign = -1
 
-                elif physics.potential(self.list_of_r[N],self.tip_position) < v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.sign ==-1 and flip <2:
+                elif physics.potential(self.list_of_r[N],self.tip_position) < self.v0*np.sqrt(self.list_of_p[N][0]**2+self.list_of_p[N][1]**2) and self.v0 ==-1 and flip <2:
                     flip +=1
-                    self.sign = +1
+                    self.v0 = -self.v0
+                    #self.sign = +1
                 else:
                     pass
 
@@ -188,6 +208,7 @@ class electron:
                     In order to make the specular reflection (mirror-like) we just have to use Snell's law of reflection.
                     '''
                     if  ((self.list_of_r[N][0]-self.geometry.center[0])**2/(self.geometry.x_radius**2)+(self.list_of_r[N][1]-self.geometry.center[1])**2/(self.geometry.y_radius**2) )>=1  and N !=0  :
+
                         n_x                  = self.list_of_r[N][0]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
                         n_y                  = self.list_of_r[N][1]/np.sqrt(self.list_of_r[N][0]**2+self.list_of_r[N][1]**2)
                         temp_px              = self.list_of_p[N][0]-2*(self.list_of_p[N][0]*n_x+self.list_of_p[N][1]*n_y)*n_x
@@ -248,14 +269,17 @@ class class_geometry:
 
     def plot_geometry(self):
         if   self.geometry ==    'cubic':
-            space_x = np.linspace(self.left,self.right,100)
-            space_y = np.linspace(self.bot,self.top,100)
-            space_z = np.zeros((len(space_x),len(space_y)))
-            for i in range(len(space_x)):
-                for j in range(len(space_y)):
-                    space_z[j][i] = physics.potential([space_y[i],space_x[j]],tip_position)
-            plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
-            plt.colorbar()
+            if physics.form == 'null':
+                pass
+            else :
+                space_x = np.linspace(self.left,self.right,100)
+                space_y = np.linspace(self.bot,self.top,100)
+                space_z = np.zeros((len(space_x),len(space_y)))
+                for i in range(len(space_x)):
+                    for j in range(len(space_y)):
+                        space_z[j][i] = physics.potential([space_x[i],space_y[j]],tip_position)
+                plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
+                plt.colorbar()
             plt.plot([self.left ,self.right],[self.bot,self.bot],color='yellow',alpha=1,linewidth=2)
             plt.plot([self.left ,self.right],[self.top,self.top],color='yellow',alpha=1,linewidth=2)
             plt.plot([self.left ,self.left ],[self.bot,self.top],color='yellow',alpha=1,linewidth=2)
@@ -268,14 +292,17 @@ class class_geometry:
             plt.ylim([self.bot-1, self.top+1])
 
         elif self.geometry ==  'spheric':
-            space_x = np.linspace(-self.radius+self.center[0],self.radius+self.center[0],100)
-            space_y = np.linspace(-self.radius+self.center[1],self.radius+self.center[1],100)
-            space_z = np.zeros((len(space_x),len(space_y)))
-            for i in range(len(space_x)):
-                for j in range(len(space_y)):
-                    space_z[j][i] = potential([space_y[i],space_x[j]],tip_position)
-            plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
-            plt.colorbar()
+            if physics.form == 'null':
+                pass
+            else :
+                space_x = np.linspace(-self.radius+self.center[0],self.radius+self.center[0],100)
+                space_y = np.linspace(-self.radius+self.center[1],self.radius+self.center[1],100)
+                space_z = np.zeros((len(space_x),len(space_y)))
+                for i in range(len(space_x)):
+                    for j in range(len(space_y)):
+                        space_z[j][i] = physics.potential([space_y[i],space_x[j]],tip_position)
+                plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
+                plt.colorbar()
             angle           = np.linspace(0, 2*np.pi, 100)
             a               = self.center[0]+self.radius*np.cos(angle)
             b               = self.center[1]+self.radius*np.sin(angle)
@@ -289,42 +316,60 @@ class class_geometry:
             plt.ylim([-self.radius-1+self.center[0], self.radius+1+self.center[1]])
 
         elif self.geometry == 'elliptic':
-            space_x = np.linspace(-self.x_radius+self.center[0],self.x_radius+self.center[0],100)
-            space_y = np.linspace(-self.y_radius+self.center[1],self.y_radius+self.center[1],100)
-            space_z = np.zeros((len(space_x),len(space_y)))
-            for i in range(len(space_x)):
-                for j in range(len(space_y)):
-                    space_z[j][i] = potential([space_y[i],space_x[j]],tip_position)
-            plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
-            plt.colorbar()
+            if physics.form == 'null':
+                pass
+            else :
+                space_x = np.linspace(-self.x_radius+self.center[0],self.x_radius+self.center[0],100)
+                space_y = np.linspace(-self.y_radius+self.center[1],self.y_radius+self.center[1],100)
+                space_z = np.zeros((len(space_x),len(space_y)))
+                for i in range(len(space_x)):
+                    for j in range(len(space_y)):
+                        space_z[j][i] = potential([space_y[i],space_x[j]],tip_position)
+                plt.contour(space_x,space_y,space_z, origin='lower', cmap=cm.Blues, levels=10,alpha=0.3)
+                plt.colorbar()
             angle = np.linspace(0, 2*np.pi, 100)
             a     = self.center[0]+self.x_radius*np.cos(angle)
             b     = self.center[1]+self.y_radius*np.sin(angle)
             plt.plot(a           ,b,color='yellow'         ,alpha=1, linewidth=2)
 
+
 if __name__ == '__main__':
-    intensity_parameter    = 1             #Intensity of the potential : u_t
-    fermi_energy_parameter = 100                #meV
+    plot_mod = 'off'
+    intensity_parameter    = 0.6                #Intensity of the potential : u_t
+    fermi_energy_parameter = 100               #meV
     length_parameter       = 2.5               #micrometer
     width_parameter        = length_parameter  #micrometer
     A_parameter            = 1                 #fermi_energy_parameter*length_parameter*width_parameter
     tip_size_parameter     = 1                 #micrometer  2*10**(-2)
     tip_position           = [0,0]
 
-    physics             = physical_system('lorentzian',tip_position,intensity_parameter,A_parameter,tip_size_parameter) #form,tip_position,intensity_parameter,A_parameter,tip_size_parameter
-    geometry_structure  = class_geometry('cubic',-length_parameter,+length_parameter,+length_parameter,-length_parameter,length_parameter/5.0,length_parameter/5.0) # geometry,left,right,top,bottom,captation_size
-    start_countdown     = 0                      #Show % of completion on the terminal
-    number_drain        = 0
-    number_source       = 0
-    sum_transmission    = 0
-    number_electrons    = 10                     #Number of electrons in the simulation
-    number_span         = 1
-    start_angle         = -np.pi/2               #First angle of diffusion
-    end_angle           = +np.pi/2               #Last angle of diffusion
-    tip_position        = tip_position
-    v0                  = 1
-    w_span_left         = -geometry_structure.span
-    w_span_right        = +geometry_structure.span
+    '''
+    physics : 'lorentzian'
+              'np-junction-sharp'
+              'np-junction-smooth''
+              'null'
+    '''
+    physics                = physical_system('lorentzian',tip_position,intensity_parameter,A_parameter,tip_size_parameter) #form,tip_position,intensity_parameter,A_parameter,tip_size_parameter
+    
+    '''
+    geometry : 'cubic'
+               'spheric'
+               'elliptic'
+    '''
+    geometry_structure     = class_geometry('spheric',-length_parameter,+length_parameter,+length_parameter,-length_parameter,length_parameter/5.0,length_parameter/5.0) # geometry,left,right,top,bottom,captation_size
+    if geometry_structure.geometry == 'elliptic':
+        print('This geometry is not well defined now, Work In Progress.')
+    start_countdown        = 0                      #Show % of completion on the terminal
+    number_drain           = 0
+    number_source          = 0
+    sum_transmission       = 0
+    number_electrons       = 100                     #Number of electrons in the simulation
+    number_span            = 1
+    start_angle            = -np.pi/20               #First angle of diffusion
+    end_angle              = +np.pi/20               #Last angle of diffusion
+    v0                     = 1
+    w_span_left            = -geometry_structure.span
+    w_span_right           = +geometry_structure.span
 
     for w in np.linspace(w_span_left,w_span_right,number_span):
         w=0
@@ -349,13 +394,16 @@ if __name__ == '__main__':
             if electron1.drain == 1:
                 number_drain       += 1
                 sum_transmission_i += np.cos(j) * (end_angle-start_angle)/number_electrons #integral into sums
-                plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='red'  ,alpha=0.1)
+                if plot_mod == 'on':
+                    plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='red'  ,alpha=0.1)
             elif electron1.source == 1:
                 number_source      += 1
                 sum_transmission_i += 0                                                    #integral into sums
-                plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='green',alpha=0.1)
+                if plot_mod == 'on':
+                    plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='green',alpha=0.1)
             else:
-                plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='blue' ,alpha=0.1)
+                if plot_mod == 'on':
+                    plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='blue' ,alpha=0.1)
         sum_transmission += sum_transmission_i*(2*geometry_structure.span)/number_span         #integral into sums
 
     if number_drain+number_source != 0 :
@@ -370,10 +418,11 @@ if __name__ == '__main__':
     print(' ')
     print('time of simulation (in s): ', stop_time - start_time)
     print(' ')
-    geometry_structure.plot_geometry()
-    plt.xlabel(r'$x[\mu m]$')
-    plt.ylabel(r'$y[\mu m]$')
-    plt.legend(loc='upper left')
-    plt.gca().set_aspect('equal')
-    plt.savefig(str(np.random.rand())+'.png',dpi=600)
-    plt.show()
+    if plot_mod == 'on':
+        geometry_structure.plot_geometry()
+        plt.xlabel(r'$x[\mu m]$')
+        plt.ylabel(r'$y[\mu m]$')
+        plt.legend(loc='upper left')
+        plt.gca().set_aspect('equal')
+        plt.savefig(str(np.random.rand())+'.png',dpi=600)
+        plt.show()
