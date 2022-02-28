@@ -20,7 +20,6 @@ class physical_system:
         self.A_parameter         = A_parameter
         self.tip_size_parameter  = tip_size_parameter
 
-
     def potential(self,position,tip_position):
         if self.form == 'lorentzian':
             return self.intensity_parameter*self.A_parameter/((self.tip_size_parameter**2)+(position[0]-self.tip_position[0])**2+(position[1]-self.tip_position[1])**2)
@@ -287,7 +286,7 @@ class class_geometry:
             self.span    = span
 
     def plot_geometry(self):
-        if   self.geometry ==    'cubic':
+        if   self.geometry == 'cubic':
             if physics.form == 'null':
                 pass
             else :
@@ -359,7 +358,7 @@ if __name__ == '__main__':
     width_parameter        = length_parameter  #micrometer
     A_parameter            = 1                 #fermi_energy_parameter*length_parameter*width_parameter
     tip_size_parameter     = 1                 #micrometer  2*10**(-2)
-    tip_position           = [0,0]
+    tip_position           = [0.5,0]
 
     '''
     physics : 'lorentzian'
@@ -374,7 +373,8 @@ if __name__ == '__main__':
                'spheric'
                'elliptic'
     '''
-    geometry_structure     = class_geometry('spheric',-length_parameter,+length_parameter,+length_parameter,-length_parameter,length_parameter/5.0,length_parameter/5.0) # geometry,left,right,top,bottom,captation_size
+
+    geometry_structure     = class_geometry('cubic',-length_parameter,+length_parameter,+length_parameter,-length_parameter,length_parameter/5.0,length_parameter/5.0) # geometry,left,right,top,bottom,captation_size
     if geometry_structure.geometry == 'elliptic':
         print('This geometry is not well defined now, Work In Progress.')
     start_countdown        = 0                      #Show % of completion on the terminal
@@ -382,16 +382,16 @@ if __name__ == '__main__':
     number_source          = 0
     sum_transmission       = 0
     number_electrons       = 100                     #Number of electrons in the simulation
-    number_time_iterations = 50000
-    number_span            = 1
-    start_angle            = -np.pi/20               #First angle of diffusion
-    end_angle              = +np.pi/20               #Last angle of diffusion
+    number_time_iterations = 500000
+    number_span            = 10
+    start_angle            = -np.pi/2               #First angle of diffusion
+    end_angle              = +np.pi/2               #Last angle of diffusion
     v0                     = 1
     w_span_left            = -geometry_structure.span
     w_span_right           = +geometry_structure.span
 
     for w in np.linspace(w_span_left,w_span_right,number_span):
-        w=0
+        #w=0
         sum_transmission_i = 0                                   #intermediate scalar to sum after each theta_j and then sum_transmission is the sum for all y_w values
         for j in np.linspace(start_angle,end_angle,number_electrons):
             start_countdown +=1
@@ -422,11 +422,12 @@ if __name__ == '__main__':
             else:
                 if plot_mod == 'on':
                     plt.plot([electron1.list_of_r[i][0] for i in range(len(electron1.list_of_r))],[electron1.list_of_r[i][1] for i in range(len(electron1.list_of_r))],color='blue' ,alpha=0.1)
-        sum_transmission += sum_transmission_i*(2*geometry_structure.span)/number_span         #integral into sums
+        sum_transmission += (1/2)*sum_transmission_i*(2*geometry_structure.span)/number_span         #integral into sums
 
     if number_drain+number_source != 0 :
         print(' ')
         print(' ')
+        print('The position of the tip were set at '+str(tip_position))
         print('In the end, there is about '+str(100*number_drain/(number_drain+number_source))+'% of electrons back in the drain')
         print('The transmission is about '+str(sum_transmission))
     else:
